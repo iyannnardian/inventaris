@@ -41,6 +41,7 @@
             <a class="nav-link active" href="{{ route('barang.index') }}"><i class="bi bi-box me-2"></i> Daftar Barang</a>
             <a class="nav-link" href="{{ route('transaksi.index') }}"><i class="bi bi-arrow-left-right me-2"></i> Transaksi</a>
             <a class="nav-link" href="{{ route('laporan.index') }}"><i class="bi bi-file-earmark-bar-graph me-2"></i> Laporan Stok</a>
+            <a class="nav-link" href="{{ route('supplier.index') }}"><i class="bi bi-truck me-2"></i> Supplier</a>
             @if(Auth::user()->role === 'admin')
                 <a class="nav-link" href="{{ route('users.index') }}"><i class="bi bi-people me-2"></i> Kelola User</a>
             @endif
@@ -299,7 +300,7 @@
             const selectKategori = document.getElementById('edit_id_kategori');
             const inputSatuan = document.getElementById('edit_satuan');
             const inputStokAwal = document.getElementById('edit_stok_awal');
-
+ 
             editButtons.forEach(button => {
                 button.addEventListener('click', function () {
                     const id = this.getAttribute('data-id');
@@ -307,7 +308,7 @@
                     const kategori = this.getAttribute('data-kategori');
                     const satuan = this.getAttribute('data-satuan');
                     const stokAwal = this.getAttribute('data-stok-awal');
-
+ 
                     formEdit.setAttribute('action', `/barang/${id}`);
                     inputNama.value = nama;
                     selectKategori.value = kategori;
@@ -320,7 +321,7 @@
                     } else {
                         inputSatuan.value = satuan;
                     }
-
+ 
                     inputStokAwal.value = stokAwal;
                 });
             });

@@ -61,6 +61,7 @@
             <a class="nav-link" href="{{ route('barang.index') }}"><i class="bi bi-box me-2"></i> Daftar Barang</a>
             <a class="nav-link" href="{{ route('transaksi.index') }}"><i class="bi bi-arrow-left-right me-2"></i> Transaksi</a>
             <a class="nav-link active" href="{{ route('laporan.index') }}"><i class="bi bi-file-earmark-bar-graph me-2"></i> Laporan Stok</a>
+            <a class="nav-link" href="{{ route('supplier.index') }}"><i class="bi bi-truck me-2"></i> Supplier</a>
             @if(Auth::user()->role === 'admin')
                 <a class="nav-link" href="{{ route('users.index') }}"><i class="bi bi-people me-2"></i> Kelola User</a>
             @endif
@@ -94,14 +95,13 @@
         </div>
 
         <div class="btn-actions-main mb-3 d-flex justify-content-end gap-2">
-            <button onclick="window.print()" class="btn btn-secondary"><i class="bi bi-printer"></i> Cetak PDF / Print</button>
             <button onclick="exportToExcel()" class="btn btn-success"><i class="bi bi-file-earmark-excel"></i> Ekspor ke Excel (.xls)</button>
         </div>
 
         <div class="excel-sheet">
             
             <div class="kop-laporan">
-                <h3>SPPG PANYABUNGAN JULU</h3>
+                <h3>SPPG PUNGGUR BESAR</h3>
                 <h4>LAPORAN STOCK BARANG (DETIL)</h4>
                 <p>Periode : {{ \Carbon\Carbon::parse($tglAwalFormatted)->format('d-m-Y') }} s.d. {{ \Carbon\Carbon::parse($tglAkhirFormatted)->format('d-m-Y') }}</p>
                 
@@ -111,15 +111,14 @@
                 <table class="excel-table" id="laporan-stok-table">
                     <thead>
                         <tr>
-                            <th style="width: 12%">Kode Brg</th>
-                            <th style="width: 25%">Nama Barang</th>
-                            <th style="width: 8%">Satuan</th>
+                            <th style="width: 30%">Nama Barang</th>
+                            <th style="width: 10%">Satuan</th>
                             <th style="width: 10%">Saldo Awal</th>
-                            <th style="width: 9%">Masuk</th>
-                            <th style="width: 9%">Keluar</th>
+                            <th style="width: 10%">Masuk</th>
+                            <th style="width: 10%">Keluar</th>
                             <th style="width: 10%">Saldo Akhir</th>
-                            <th style="width: 10%">Harga Beli Akhir</th>
-                            <th style="width: 7%">Jumlah</th>
+                            <th style="width: 12%">Harga Beli Akhir</th>
+                            <th style="width: 8%">Jumlah</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -132,7 +131,7 @@
                         @forelse($groupedBarangs as $kategoriName => $items)
                             <!-- Baris Judul Kategori sesuai layout Excel -->
                             <tr class="category-header">
-                                <td colspan="3" class="text-uppercase"><i class="bi bi-caret-right-fill"></i> {{ $kategoriName }}</td>
+                                <td colspan="2" class="text-uppercase">{{ $kategoriName }}</td>
                                 <td></td>
                                 <td></td>
                                 <td></td>
@@ -143,7 +142,6 @@
                             
                             @foreach($items as $b)
                             <tr>
-                                <td class="text-center font-monospace">{{ $b->kode_barang }}</td>
                                 <td>{{ $b->nama_barang }}</td>
                                 <td class="text-center">{{ $b->satuan }}</td>
                                 <td class="text-center fw-bold text-secondary">{{ $b->saldo_awal > 0 ? number_format($b->saldo_awal) : '-' }}</td>
@@ -187,10 +185,10 @@
             
             // Membuat Kop Laporan persis di Excel
             var kopExcel = '<table>' +
-                '<tr><td colspan="9" style="text-align:center; font-size:16px; font-weight:bold; font-family:Arial;">SPPG PANYABUNGAN JULU</td></tr>' +
-                '<tr><td colspan="9" style="text-align:center; font-size:14px; font-weight:bold; font-family:Arial;">LAPORAN STOCK BARANG (DETIL)</td></tr>' +
-                '<tr><td colspan="9" style="text-align:center; font-size:11px; font-family:Arial;">Periode: {{ \Carbon\Carbon::parse($tglAwalFormatted)->format("d-m-Y") }} s.d {{ \Carbon\Carbon::parse($tglAkhirFormatted)->format("d-m-Y") }}</td></tr>' +
-                '<tr><td colspan="9"></td></tr>' +
+                '<tr><td colspan="8" style="text-align:center; font-size:16px; font-weight:bold; font-family:Arial;">SPPG PUNGGUR BESAR</td></tr>' +
+                '<tr><td colspan="8" style="text-align:center; font-size:14px; font-weight:bold; font-family:Arial;">LAPORAN STOCK BARANG (DETIL)</td></tr>' +
+                '<tr><td colspan="8" style="text-align:center; font-size:11px; font-family:Arial;">Periode: {{ \Carbon\Carbon::parse($tglAwalFormatted)->format("d-m-Y") }} s.d {{ \Carbon\Carbon::parse($tglAkhirFormatted)->format("d-m-Y") }}</td></tr>' +
+                '<tr><td colspan="8"></td></tr>' +
                 '</table>';
             
             var fullHtml = kopExcel + style + html;

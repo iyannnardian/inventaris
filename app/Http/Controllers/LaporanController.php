@@ -48,9 +48,27 @@ class LaporanController extends Controller
             // 4. Hitung Saldo Akhir
             $barang->saldo_akhir = $barang->saldo_awal + $barang->masuk - $barang->keluar;
 
-            // 5. Dummy Harga Beli Akhir & Jumlah Rupiah sesuai layout Excel (bisa diisi dummy atau strip)
-            $barang->harga_beli_akhir = '-';
-            $barang->jumlah_rupiah = '-';
+            // 5. Hitung Harga Beli Rata-rata Tertimbang (Weighted Average Cost) dari seluruh barang masuk
+            $masuksUpToDate = $barang->barangMasuks()
+                ->where('tanggal_masuk', '<=', $tanggalAkhir->format('Y-m-d'))
+                ->get();
+
+            $totalMasukQty = $masuksUpToDate->sum('jumlah');
+            if ($totalMasukQty > 0) {
+                $totalMasukValue = $masuksUpToDate->sum(function ($item) {
+                    return $item->jumlah * $item->harga;
+                });
+                $hargaRataRata = $totalMasukValue / $totalMasukQty;
+            } else {
+                $hargaRataRata = 0; // Fallback ke 0 karena kolom harga dasar master barang ditiadakan
+            }
+
+            $barang->harga_beli_akhir = $hargaRataRata > 0 
+                ? 'Rp ' . number_format($hargaRataRata, 0, ',', '.') 
+                : '-';
+            $barang->jumlah_rupiah = ($hargaRataRata > 0 && $barang->saldo_akhir > 0)
+                ? 'Rp ' . number_format($barang->saldo_akhir * $hargaRataRata, 0, ',', '.') 
+                : '-';
 
             return $barang;
         });

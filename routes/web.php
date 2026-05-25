@@ -5,6 +5,7 @@ use App\Http\Controllers\BarangController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\TransaksiController;
+use App\Http\Controllers\SupplierController;
 
 
 Route::get('/', function () {
@@ -23,6 +24,9 @@ Route::middleware('auth')->group(function () {
     // Kategori CRUD
     Route::resource('kategori', KategoriController::class)->except(['create', 'edit']);
     
+    // Supplier CRUD
+    Route::resource('supplier', SupplierController::class)->except(['create', 'edit']);
+    
     // Barang CRUD
     Route::resource('barang', BarangController::class)->except(['create', 'edit']);
     
@@ -30,6 +34,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/transaksi', [TransaksiController::class, 'index'])->name('transaksi.index');
     Route::post('/transaksi/masuk', [TransaksiController::class, 'storeMasuk'])->name('transaksi.storeMasuk');
     Route::post('/transaksi/keluar', [TransaksiController::class, 'storeKeluar'])->name('transaksi.storeKeluar');
+    Route::put('/transaksi/masuk/{id}', [TransaksiController::class, 'updateMasuk'])->name('transaksi.updateMasuk');
+    Route::put('/transaksi/keluar/{id}', [TransaksiController::class, 'updateKeluar'])->name('transaksi.updateKeluar');
     Route::delete('/transaksi/masuk/{id}', [TransaksiController::class, 'destroyMasuk'])->name('transaksi.destroyMasuk');
     Route::delete('/transaksi/keluar/{id}', [TransaksiController::class, 'destroyKeluar'])->name('transaksi.destroyKeluar');
 

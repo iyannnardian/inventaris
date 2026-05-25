@@ -32,10 +32,11 @@
             <a class="nav-link active" href="{{ route('kategori.index') }}"><i class="bi bi-tags me-2"></i> Kategori Barang</a>
             <a class="nav-link" href="{{ route('barang.index') }}"><i class="bi bi-box me-2"></i> Daftar Barang</a>
             <a class="nav-link" href="{{ route('transaksi.index') }}"><i class="bi bi-arrow-left-right me-2"></i> Transaksi</a>
-             <a class="nav-link" href="{{ route('laporan.index') }}"><i class="bi bi-file-earmark-bar-graph me-2"></i> Laporan Stok</a>
-             @if(Auth::user()->role === 'admin')
-                 <a class="nav-link" href="{{ route('users.index') }}"><i class="bi bi-people me-2"></i> Kelola User</a>
-             @endif
+            <a class="nav-link" href="{{ route('laporan.index') }}"><i class="bi bi-file-earmark-bar-graph me-2"></i> Laporan Stok</a>
+            <a class="nav-link" href="{{ route('supplier.index') }}"><i class="bi bi-truck me-2"></i> Supplier</a>
+            @if(Auth::user()->role === 'admin')
+                <a class="nav-link" href="{{ route('users.index') }}"><i class="bi bi-people me-2"></i> Kelola User</a>
+            @endif
         </nav>
         <div class="position-absolute bottom-0 w-100 p-3">
             <form action="{{ route('logout') }}" method="POST">
@@ -92,22 +93,34 @@
                         <span class="badge bg-primary">{{ $k->barangs_count }} Items</span>
                     </div>
                     <p class="text-muted small mb-3">Dibuat pada {{ $k->created_at->format('d M Y') }}</p>
-                    @if(Auth::user()->role !== 'kepala dapur')
-                    <div class="d-flex justify-content-end gap-2 border-top pt-3 mt-2">
-                        <button class="btn btn-warning btn-action text-white btn-edit" 
+                    <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-2">
+                        <button class="btn btn-outline-primary btn-action btn-view-items" 
                                 data-id="{{ $k->id_kategori }}" 
                                 data-nama="{{ $k->nama_kategori }}"
+                                data-barangs="{{ $k->barangs->toJson() }}"
                                 data-bs-toggle="modal" 
-                                data-bs-target="#modalEdit">
-                            <i class="bi bi-pencil"></i> Edit
+                                data-bs-target="#modalViewBarang">
+                            <i class="bi bi-eye"></i> Lihat Barang
                         </button>
-                        <form action="{{ route('kategori.destroy', $k->id_kategori) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kategori ini?');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger btn-action text-white"><i class="bi bi-trash"></i> Hapus</button>
-                        </form>
+                        
+                        @if(Auth::user()->role !== 'kepala dapur')
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-warning btn-action text-white btn-edit" 
+                                    data-id="{{ $k->id_kategori }}" 
+                                    data-nama="{{ $k->nama_kategori }}"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#modalEdit"
+                                    title="Edit Kategori">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <form action="{{ route('kategori.destroy', $k->id_kategori) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kategori ini?');" class="d-inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-danger btn-action text-white" title="Hapus Kategori"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </div>
+                        @endif
                     </div>
-                    @endif
                 </div>
             </div>
             @empty
@@ -173,6 +186,41 @@
         </div>
     </div>
 
+    <!-- Modal Lihat Barang di Kategori -->
+    <div class="modal fade" id="modalViewBarang" tabindex="-1" aria-labelledby="modalViewBarangLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h5 class="modal-title" id="modalViewBarangLabel"><i class="bi bi-box"></i> Daftar Barang Kategori: <span id="view_nama_kategori" class="fw-bold"></span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle" id="table-kategori-barang">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 10%">No</th>
+                                    <th style="width: 60%">Nama Barang</th>
+                                    <th style="width: 30%">Stok Saat Ini</th>
+                                </tr>
+                            </thead>
+                            <tbody id="list-barang-kategori">
+                                <!-- Isi dinamis lewat JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="empty-barang-state" class="text-center py-4 d-none text-muted">
+                        <i class="bi bi-box-seam fs-2 d-block mb-2"></i>
+                        <p class="mb-0">Belum ada barang yang didaftarkan pada kategori ini.</p>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Logika untuk mengisi data pada Modal Edit Kategori secara dinamis
@@ -187,9 +235,49 @@
                     const nama = this.getAttribute('data-nama');
 
                     // Set action URL pada form secara dinamis
-                    formEdit.setAttribute('action', `/kategori/${id}`);
+                    formEditKategori.setAttribute('action', `/kategori/${id}`);
                     // Isi nama kategori
                     inputNama.value = nama;
+                });
+            });
+
+            // Logika untuk menampilkan daftar barang dalam Kategori dinamis
+            const viewBarangButtons = document.querySelectorAll('.btn-view-items');
+            const viewNamaKategori = document.getElementById('view_nama_kategori');
+            const listBarangKategori = document.getElementById('list-barang-kategori');
+            const tableKategoriBarang = document.getElementById('table-kategori-barang');
+            const emptyBarangState = document.getElementById('empty-barang-state');
+
+            viewBarangButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const nama = this.getAttribute('data-nama');
+                    const barangsJson = this.getAttribute('data-barangs');
+                    const barangs = JSON.parse(barangsJson) || [];
+
+                    viewNamaKategori.textContent = nama;
+                    listBarangKategori.innerHTML = '';
+
+                    if (barangs.length === 0) {
+                        tableKategoriBarang.classList.add('d-none');
+                        emptyBarangState.classList.remove('d-none');
+                    } else {
+                        tableKategoriBarang.classList.remove('d-none');
+                        emptyBarangState.classList.add('d-none');
+
+                        barangs.forEach((b, index) => {
+                            const row = document.createElement('tr');
+                            const stokBadge = b.stok <= 5
+                                ? `<span class="badge bg-danger py-2 px-3"><i class="bi bi-exclamation-triangle-fill"></i> ${b.stok} ${b.satuan} (Kritis)</span>`
+                                : `<span class="badge bg-success py-2 px-3"><i class="bi bi-check-circle-fill"></i> ${b.stok} ${b.satuan}</span>`;
+
+                            row.innerHTML = `
+                                <td>${index + 1}</td>
+                                <td class="fw-semibold text-dark">${b.nama_barang}</td>
+                                <td>${stokBadge}</td>
+                            `;
+                            listBarangKategori.appendChild(row);
+                        });
+                    }
                 });
             });
         });

@@ -10,8 +10,8 @@ class KategoriController extends Controller
 {
     public function index()
     {
-        // Load kategori beserta jumlah barang di dalamnya
-        $kategoris = Kategori::withCount('barangs')->get();
+        // Load kategori beserta data barang (eager loading) dan jumlah barang di dalamnya
+        $kategoris = Kategori::with('barangs')->withCount('barangs')->get();
         return view('kategori.index', compact('kategoris'));
     }
 

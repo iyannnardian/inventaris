@@ -35,11 +35,12 @@
             <a class="nav-link" href="{{ route('dashboard') }}"><i class="bi bi-grid me-2"></i> Dashboard</a>
             <a class="nav-link" href="{{ route('kategori.index') }}"><i class="bi bi-tags me-2"></i> Kategori Barang</a>
             <a class="nav-link" href="{{ route('barang.index') }}"><i class="bi bi-box me-2"></i> Daftar Barang</a>
-            <a class="nav-link active" href="{{ route('transaksi.index') }}"><i class="bi bi-arrow-left-right me-2"></i> Transaksi</a>
-             <a class="nav-link" href="{{ route('laporan.index') }}"><i class="bi bi-file-earmark-bar-graph me-2"></i> Laporan Stok</a>
-             @if(Auth::user()->role === 'admin')
-                 <a class="nav-link" href="{{ route('users.index') }}"><i class="bi bi-people me-2"></i> Kelola User</a>
-             @endif
+            <a class="nav-link" href="{{ route('transaksi.index') }}"><i class="bi bi-arrow-left-right me-2"></i> Transaksi</a>
+            <a class="nav-link" href="{{ route('laporan.index') }}"><i class="bi bi-file-earmark-bar-graph me-2"></i> Laporan Stok</a>
+            <a class="nav-link" href="{{ route('supplier.index') }}"><i class="bi bi-truck me-2"></i> Supplier</a>
+            @if(Auth::user()->role === 'admin')
+                <a class="nav-link" href="{{ route('users.index') }}"><i class="bi bi-people me-2"></i> Kelola User</a>
+            @endif
         </nav>
         <div class="position-absolute bottom-0 w-100 p-3">
             <form action="{{ route('logout') }}" method="POST">
@@ -128,14 +129,16 @@
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 5%">No</th>
-                                <th style="width: 12%">Tipe</th>
-                                <th style="width: 23%">Barang</th>
-                                <th style="width: 10%">Jumlah</th>
-                                <th style="width: 15%">Tanggal</th>
-                                <th style="width: 20%">Supplier / Detail</th>
-                                <th style="width: 15%">Operator</th>
+                                <th style="width: 10%">Tipe</th>
+                                <th style="width: 18%">Barang</th>
+                                <th style="width: 8%">Jumlah</th>
+                                <th style="width: 12%">Harga Satuan</th>
+                                <th style="width: 12%">Subtotal</th>
+                                <th style="width: 10%">Tanggal</th>
+                                <th style="width: 13%">Supplier / Detail</th>
+                                <th style="width: 8%">Operator</th>
                                 @if(Auth::user()->role !== 'kepala dapur')
-                                    <th style="width: 5%" class="text-end">Aksi</th>
+                                    <th style="width: 4%" class="text-end">Aksi</th>
                                 @endif
                             </tr>
                         </thead>
@@ -159,6 +162,20 @@
                                     @endif
                                     <small class="text-muted">{{ $t->barang->satuan ?? '' }}</small>
                                 </td>
+                                <td>
+                                    @if($t->tipe == 'masuk')
+                                        <span class="text-muted">Rp {{ number_format($t->harga, 0, ',', '.') }}</span>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($t->tipe == 'masuk')
+                                        <span class="fw-semibold text-dark">Rp {{ number_format($t->harga * $t->jumlah, 0, ',', '.') }}</span>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
                                 <td>{{ \Carbon\Carbon::parse($t->tanggal)->format('d M Y') }}</td>
                                 <td>
                                     @if($t->tipe == 'masuk')
@@ -172,19 +189,41 @@
                                 </td>
                                 @if(Auth::user()->role !== 'kepala dapur')
                                 <td class="text-end">
-                                    @if($t->tipe == 'masuk')
-                                        <form action="{{ route('transaksi.destroyMasuk', $t->id_transaksi) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus transaksi masuk ini? Penghapusan akan mengembalikan stok.');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-outline-danger btn-action text-danger border-0"><i class="bi bi-trash"></i></button>
-                                        </form>
-                                    @else
-                                        <form action="{{ route('transaksi.destroyKeluar', $t->id_transaksi) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus transaksi keluar ini? Penghapusan akan mengembalikan stok.');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-outline-danger btn-action text-danger border-0"><i class="bi bi-trash"></i></button>
-                                        </form>
-                                    @endif
+                                    <div class="d-flex justify-content-end gap-1">
+                                        @if($t->tipe == 'masuk')
+                                            <button class="btn btn-outline-warning btn-action text-warning border-0 btn-edit-masuk"
+                                                    data-id="{{ $t->id_transaksi }}"
+                                                    data-barang="{{ $t->id_barang }}"
+                                                    data-supplier="{{ $t->id_supplier }}"
+                                                    data-jumlah="{{ $t->jumlah }}"
+                                                    data-harga="{{ $t->harga }}"
+                                                    data-tanggal="{{ $t->tanggal }}"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalEditMasuk">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <form action="{{ route('transaksi.destroyMasuk', $t->id_transaksi) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus transaksi masuk ini? Penghapusan akan mengembalikan stok.');" class="d-inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-outline-danger btn-action text-danger border-0"><i class="bi bi-trash"></i></button>
+                                            </form>
+                                        @else
+                                            <button class="btn btn-outline-warning btn-action text-warning border-0 btn-edit-keluar"
+                                                    data-id="{{ $t->id_transaksi }}"
+                                                    data-barang="{{ $t->id_barang }}"
+                                                    data-jumlah="{{ $t->jumlah }}"
+                                                    data-tanggal="{{ $t->tanggal }}"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalEditKeluar">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <form action="{{ route('transaksi.destroyKeluar', $t->id_transaksi) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus transaksi keluar ini? Penghapusan akan mengembalikan stok.');" class="d-inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-outline-danger btn-action text-danger border-0"><i class="bi bi-trash"></i></button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 </td>
                                 @endif
                             </tr>
@@ -228,6 +267,10 @@
                         <div class="mb-3">
                             <label for="jumlah" class="form-label">Jumlah Masuk <span class="text-danger">*</span></label>
                             <input type="number" class="form-control" id="jumlah" name="jumlah" placeholder="Masukkan jumlah barang masuk" min="1" required autocomplete="off">
+                        </div>
+                        <div class="mb-3">
+                            <label for="harga_masuk" class="form-label">Harga Beli Satuan (Rp) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="harga_masuk" name="harga" placeholder="Masukkan harga beli per satuan" min="0" required autocomplete="off">
                         </div>
                         <div class="mb-3">
                             <label for="tanggal_masuk" class="form-label">Tanggal Masuk <span class="text-danger">*</span></label>
@@ -286,6 +329,99 @@
         </div>
     </div>
 
+    <!-- Modal Edit Barang Masuk -->
+    <div class="modal fade" id="modalEditMasuk" tabindex="-1" aria-labelledby="modalEditMasukLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-warning text-white border-0">
+                    <h5 class="modal-title" id="modalEditMasukLabel"><i class="bi bi-pencil-square"></i> Edit Barang Masuk</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formEditMasuk" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="edit_masuk_id_barang" class="form-label">Pilih Barang <span class="text-danger">*</span></label>
+                            <select name="id_barang" id="edit_masuk_id_barang" class="form-select" required>
+                                @foreach($barangs as $b)
+                                    <option value="{{ $b->id_barang }}">{{ $b->nama_barang }} (Stok saat ini: {{ $b->stok }} {{ $b->satuan }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_masuk_id_supplier" class="form-label">Pilih Supplier <span class="text-danger">*</span></label>
+                            <select name="id_supplier" id="edit_masuk_id_supplier" class="form-select" required>
+                                @foreach($suppliers as $s)
+                                    <option value="{{ $s->id_supplier }}">{{ $s->nama_supplier }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_masuk_jumlah" class="form-label">Jumlah Masuk <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="edit_masuk_jumlah" name="jumlah" min="1" required autocomplete="off">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_masuk_harga" class="form-label">Harga Beli Satuan (Rp) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="edit_masuk_harga" name="harga" min="0" required autocomplete="off">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_masuk_tanggal" class="form-label">Tanggal Masuk <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="edit_masuk_tanggal" name="tanggal_masuk" required autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-warning text-white">Simpan Perubahan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Barang Keluar -->
+    <div class="modal fade" id="modalEditKeluar" tabindex="-1" aria-labelledby="modalEditKeluarLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-warning text-white border-0">
+                    <h5 class="modal-title" id="modalEditKeluarLabel"><i class="bi bi-pencil-square"></i> Edit Barang Keluar</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formEditKeluar" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="edit_keluar_id_barang" class="form-label">Pilih Barang <span class="text-danger">*</span></label>
+                            <select name="id_barang" id="edit_keluar_id_barang" class="form-select" required>
+                                @foreach($barangs as $b)
+                                    <option value="{{ $b->id_barang }}" data-stok="{{ $b->stok }}" data-nama="{{ $b->nama_barang }}" data-satuan="{{ $b->satuan }}">
+                                        {{ $b->nama_barang }} (Stok saat ini: {{ $b->stok }} {{ $b->satuan }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_keluar_jumlah" class="form-label">Jumlah Keluar <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="edit_keluar_jumlah" name="jumlah" min="1" required autocomplete="off">
+                            <div id="edit-warning-stok" class="alert alert-danger mt-2 d-none shadow-sm py-2 px-3" style="font-size: 0.85rem;">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i> Stok tidak mencukupi! Barang kurang.
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_keluar_tanggal" class="form-label">Tanggal Keluar <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="edit_keluar_tanggal" name="tanggal_keluar" required autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" id="edit-btn-submit-keluar" class="btn btn-warning text-white">Simpan Perubahan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -320,6 +456,89 @@
             if (selectBarang && inputJumlah) {
                 selectBarang.addEventListener('change', checkStock);
                 inputJumlah.addEventListener('input', checkStock);
+            }
+
+            // Logika Edit Barang Masuk
+            const editMasukButtons = document.querySelectorAll('.btn-edit-masuk');
+            const formEditMasuk = document.getElementById('formEditMasuk');
+            const selectMasukBarang = document.getElementById('edit_masuk_id_barang');
+            const selectMasukSupplier = document.getElementById('edit_masuk_id_supplier');
+            const inputMasukJumlah = document.getElementById('edit_masuk_jumlah');
+            const inputMasukHarga = document.getElementById('edit_masuk_harga');
+            const inputMasukTanggal = document.getElementById('edit_masuk_tanggal');
+
+            editMasukButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const id = this.getAttribute('data-id');
+                    const barang = this.getAttribute('data-barang');
+                    const supplier = this.getAttribute('data-supplier');
+                    const jumlah = this.getAttribute('data-jumlah');
+                    const harga = this.getAttribute('data-harga');
+                    const tanggal = this.getAttribute('data-tanggal');
+
+                    formEditMasuk.setAttribute('action', `/transaksi/masuk/${id}`);
+                    selectMasukBarang.value = barang;
+                    selectMasukSupplier.value = supplier;
+                    inputMasukJumlah.value = jumlah;
+                    inputMasukHarga.value = harga;
+                    inputMasukTanggal.value = tanggal;
+                });
+            });
+
+            // Logika Edit Barang Keluar
+            const editKeluarButtons = document.querySelectorAll('.btn-edit-keluar');
+            const formEditKeluar = document.getElementById('formEditKeluar');
+            const selectKeluarBarang = document.getElementById('edit_keluar_id_barang');
+            const inputKeluarJumlah = document.getElementById('edit_keluar_jumlah');
+            const inputKeluarTanggal = document.getElementById('edit_keluar_tanggal');
+            const editWarningStok = document.getElementById('edit-warning-stok');
+            const editBtnSubmit = document.getElementById('edit-btn-submit-keluar');
+
+            editKeluarButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const id = this.getAttribute('data-id');
+                    const barang = this.getAttribute('data-barang');
+                    const jumlah = this.getAttribute('data-jumlah');
+                    const tanggal = this.getAttribute('data-tanggal');
+
+                    formEditKeluar.setAttribute('action', `/transaksi/keluar/${id}`);
+                    selectKeluarBarang.value = barang;
+                    inputKeluarJumlah.value = jumlah;
+                    inputKeluarTanggal.value = tanggal;
+
+                    // Reset warning stok saat membuka
+                    editWarningStok.classList.add('d-none');
+                    editBtnSubmit.disabled = false;
+                });
+            });
+
+            // Cek stok saat edit keluar
+            function checkEditStock() {
+                const selectedOption = selectKeluarBarang.options[selectKeluarBarang.selectedIndex];
+                if (!selectedOption || selectKeluarBarang.value === '') {
+                    editWarningStok.classList.add('d-none');
+                    editBtnSubmit.disabled = false;
+                    return;
+                }
+
+                const stokAvailable = parseInt(selectedOption.getAttribute('data-stok')) || 0;
+                const namaBarang = selectedOption.getAttribute('data-nama') || '';
+                const satuanBarang = selectedOption.getAttribute('data-satuan') || '';
+                const jumlahKeluar = parseInt(inputKeluarJumlah.value) || 0;
+
+                if (jumlahKeluar > stokAvailable) {
+                    editWarningStok.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i> Stok <strong>${namaBarang}</strong> tidak mencukupi! Hanya tersedia <strong>${stokAvailable} ${satuanBarang}</strong>.`;
+                    editWarningStok.classList.remove('d-none');
+                    editBtnSubmit.disabled = true;
+                } else {
+                    editWarningStok.classList.add('d-none');
+                    editBtnSubmit.disabled = false;
+                }
+            }
+
+            if (selectKeluarBarang && inputKeluarJumlah) {
+                selectKeluarBarang.addEventListener('change', checkEditStock);
+                inputKeluarJumlah.addEventListener('input', checkEditStock);
             }
         });
     </script>

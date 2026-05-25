@@ -9,7 +9,7 @@ class Barang extends Model
     protected $table = 'barangs';
     protected $primaryKey = 'id_barang'; // Menyesuaikan dengan migration kita
     protected $guarded = [];
-    protected $appends = ['stok', 'kode_barang'];
+    protected $appends = ['stok'];
 
     public function kategori()
     {
@@ -33,12 +33,5 @@ class Barang extends Model
         return $this->stok_awal + $masuk - $keluar;
     }
 
-    public function getKodeBarangAttribute()
-    {
-        $categoryName = optional($this->kategori)->nama_kategori ?? 'UMUM';
-        // Ambil 2 huruf pertama dari nama kategori
-        $prefix = strtoupper(substr(preg_replace('/[^a-zA-Z]/', '', $categoryName), 0, 2));
-        if (strlen($prefix) < 2) $prefix = 'BR';
-        return $prefix . '.01.' . str_pad($this->id_barang, 3, '0', STR_PAD_LEFT);
-    }
+
 }
